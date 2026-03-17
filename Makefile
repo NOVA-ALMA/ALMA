@@ -15,3 +15,12 @@ CASA_SERVICE := casa
 # Override explicitly with RUNTIME=docker or RUNTIME=apptainer if needed.
 RUNTIME ?= $(shell command -v docker >/dev/null 2>&1 && echo docker || echo apptainer)
 
+.PHONY: \
+	help \
+	bootstrap \
+
+help:
+	@printf "%s\n" \
+	"Workspace commands (runtime: $(RUNTIME)):" \
+	"  make bootstrap             Validate workspace prerequisites and print next steps" \
+
