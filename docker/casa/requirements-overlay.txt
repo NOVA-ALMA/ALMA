@@ -1,0 +1,13 @@
+################################################################################
+# CASA Overlay Requirements
+#
+# This file must contain only CASA-specific differences from
+# ../../pipeline/requirements.txt.
+#
+# Allowed entries:
+# - packages needed only in the monolithic CASA runtime
+# - tighter CASA-only compatibility pins for packages that otherwise come from
+#   the shared base requirements
+#
+# Do not duplicate unchanged entries from the shared base file.
+################################################################################
