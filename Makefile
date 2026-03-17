@@ -10,3 +10,8 @@ PYTHON ?= python3
 DEV_SERVICE := dev
 CASA_SERVICE := casa
 
+# Detect the available container runtime.
+# Prefer Docker but fall back to Apptainer (HPC mode).
+# Override explicitly with RUNTIME=docker or RUNTIME=apptainer if needed.
+RUNTIME ?= $(shell command -v docker >/dev/null 2>&1 && echo docker || echo apptainer)
+
