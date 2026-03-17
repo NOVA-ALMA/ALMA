@@ -2,3 +2,4 @@
 docker/data
 apptainer/*.sif
 docker/casa/*.xz
+pipeline-*

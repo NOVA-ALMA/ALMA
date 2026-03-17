@@ -27,3 +27,41 @@ services:
       - ./docker/dev/config.py:/home/pipeline/.casa/config.py  # disables auto-update checks
       - ./pipeline-testdata:/home/pipeline/pipeline-testdata
     working_dir: /home/pipeline
+
+  # ---------------------------------------------------------------------------
+  # casa — AlmaLinux 8 + CASA 6.7.3
+  # Use for: running the full pipeline in CASA, interactive CASA sessions
+  #
+  # Version config: docker/casa/version.env
+  # Before building/rebuilding the casa image:
+  #   make build-casa
+  #
+  # Requires: the configured CASA tarball in docker/casa/
+  #           (fetch it with docker/download.sh --casa)
+  #           docker/data/ populated with CASA measures data (see dev first-time setup above)
+  #
+  # Usage:
+  #   docker compose run --rm casa bash
+  #   docker compose run --rm casa casa --nogui --nologger -c /casa/pipeline/runpipeline.py ppr.xml
+  # ---------------------------------------------------------------------------
+  casa:
+    build:
+      context: .
+      dockerfile: docker/casa/Dockerfile
+      args:
+        - CASA_VERSION
+    image: pipeline-casa
+    platform: linux/amd64
+    stdin_open: true
+    tty: true
+    environment:
+      - QT_QPA_PLATFORM=offscreen   # headless Qt rendering; no X display required
+      - LIBGL_ALWAYS_SOFTWARE=1     # force Mesa software renderer; no GPU in container
+    volumes:
+      - ./docker/data:/root/.casa/data          # CASA measures data
+      - ./pipeline:/casa/pipeline                    # pipeline source (live mount)
+      - ./.git/modules/pipeline:/casa/.git/modules/pipeline:ro  # git metadata for version detection
+      - ./raw:/casa/raw                              # local sample measurement-set data
+      - ./docker/casa/startup.py:/root/.casa/startup.py   # adds pipeline to sys.path
+      - ./docker/casa/config.py:/root/.casa/config.py     # sets measurespath
+      - ./pipeline-testdata:/casa/pipeline-testdata

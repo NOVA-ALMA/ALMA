@@ -69,6 +69,18 @@ shell-dev:
 	./apptainer/run-dev.sh
 endif
 
+ifeq ($(RUNTIME),docker)
+build-casa:
+	$(COMPOSE) build $(CASA_SERVICE)
+else
+build-casa:
+	@printf "%s\n" \
+	"build-casa requires Docker, which is not available in this environment." \
+	"Build the SIF on a Docker machine and transfer it:" \
+	"  ./apptainer/build.sh --casa" >&2
+	@exit 1
+endif
+
 test-unit:
 	$(RUN_DEV) \
 		pytest $(UNIT_PATH) --nologfile -o "cache_dir=$(PYTEST_CACHE)" -q $(PYTEST_ARGS)
