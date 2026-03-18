@@ -26,6 +26,11 @@ Key paths in this workspace:
 # Quick Start
 
 
+## Prerequisites
+
+To run things (either locally, or on HPC), a few requirements have to be met: `docker`, `apptainer`, `python`, `git`, and `make` obviously need to be installed.
+
+
 ## Local Workspace (Docker-based)
 
 The fastest path to a working development shell on a local machine is:
@@ -127,3 +132,4 @@ make test-regression-fast
 make test-regression
 ```
 
+****NOTE**** Regression test hang at the moment, both in `docker` and `apptainer`.
