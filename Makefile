@@ -35,6 +35,8 @@ PYTEST_ARGS ?=
 	bootstrap \
 	build-dev \
 	shell-dev \
+	build-casa \
+	shell-casa \
 	test-unit \
 
 help:
@@ -43,6 +45,8 @@ help:
 	"  make bootstrap             Validate workspace prerequisites and print next steps" \
 	"  make build-dev             Build the development image  (Docker only)" \
 	"  make shell-dev             Start dev and open a shell" \
+	"  make build-casa            Build the CASA image using docker/casa/version.env  (Docker only)" \
+	"  make shell-casa            Open a shell in the CASA runtime container" \
 	"  make test-unit             Run the default fast unit-style path in dev" \
 
 bootstrap:
@@ -79,6 +83,14 @@ build-casa:
 	"Build the SIF on a Docker machine and transfer it:" \
 	"  ./apptainer/build.sh --casa" >&2
 	@exit 1
+endif
+
+ifeq ($(RUNTIME),docker)
+shell-casa:
+	$(COMPOSE) run --rm $(CASA_SERVICE) bash
+else
+shell-casa:
+	./apptainer/run-casa.sh
 endif
 
 test-unit:

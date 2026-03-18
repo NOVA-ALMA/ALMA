@@ -86,3 +86,37 @@ or
 ```shell
 ./apptainer/build.sh --all
 ```
+
+One can the copy the resulting `pipeline-dev.sif` and `pipeline-casa.sif` files to the HPC system, where they can then be run.
+
+
+# Usage
+
+Use the containers as follows:
+
+-   **`pipeline-dev`:** writing code, running tests, linting, and general development
+-   **`pipeline-casa`:** full CASA runtime and full pipeline execution
+
+If you only need to edit code or run tests, use `pipeline-dev`. If you need to run the pipeline inside the full CASA runtime, use `pipeline-casa`. The `pipeline-casa` container requires both the CASA tarball and CASA measures data to be present.
+
+
+## Common commands
+
+In addition to the setup commands, i.e.:
+
+```shell
+make bootstrap
+make build-dev
+make shell-dev
+make build-casa
+make shell-casa
+```
+
+the `Makefile` also has some test commands. The unit tests for the pipeline can be run via the following command:
+
+```sh
+make test-unit
+```
+
+which will use the `pipeline-dev` container (both Docker and Apptainer).
+
