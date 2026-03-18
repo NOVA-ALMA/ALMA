@@ -4,3 +4,4 @@ apptainer/*.sif
 docker/casa/*.xz
 pipeline-*
 .pipeline-home/
+raw/
