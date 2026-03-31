@@ -36,7 +36,7 @@ To run things (either locally, or on HPC), a few requirements have to be met: `d
 The fastest path to a working development shell on a local machine is:
 
 ```shell
-git clone https://github.com/camarocico/ALMA.git
+git clone https://github.com/NOVA-ALMA/ALMA.git
 cd ALMA
 git submodule update --init
 make bootstrap
