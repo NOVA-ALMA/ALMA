@@ -103,8 +103,8 @@ test-unit:
 
 test-regression-fast:
 	$(RUN_CASA) \
-		python3 -m pytest $(REGRESSION_FAST_PATH) --nologfile -vv $(PYTEST_ARGS)
+		bash -c "cd /casa/workdir && python3 -m pytest /casa/$(REGRESSION_FAST_PATH) --nologfile -vv $(PYTEST_ARGS)"
 
 test-regression:
 	$(RUN_CASA) \
-		python3 -m pytest $(REGRESSION_PATH) --nologfile --longtests -vv $(PYTEST_ARGS)
+		bash -c "cd /casa/workdir && python3 -m pytest /casa/$(REGRESSION_PATH) --nologfile --longtests -vv $(PYTEST_ARGS)"
