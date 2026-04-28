@@ -65,3 +65,4 @@ services:
       - ./docker/casa/startup.py:/root/.casa/startup.py   # adds pipeline to sys.path
       - ./docker/casa/config.py:/root/.casa/config.py     # sets measurespath
       - ./pipeline-testdata:/casa/pipeline-testdata
+      - ./workdir:/casa/workdir                          # pipeline run output (weblog, saved_state, logs)

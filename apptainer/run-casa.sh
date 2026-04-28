@@ -93,6 +93,8 @@ fi
 # explicitly to provide the virtual framebuffer that CASA tools (e.g. plotms)
 # require.
 
+mkdir -p "${ROOT_DIR}/workdir"
+
 if [ $# -eq 0 ]; then
     # Interactive shell.
     INNER_CMD="exec bash -i"
@@ -110,6 +112,7 @@ exec apptainer exec \
     --bind "${ROOT_DIR}/docker/data:${HOME}/.casa/data" \
     --bind "${CASA_CONFIG_BIND}" \
     --bind "${ROOT_DIR}/docker/casa/startup.py:${HOME}/.casa/startup.py" \
+    --bind "${ROOT_DIR}/workdir:/casa/workdir" \
     --bind "${ROOT_DIR}:${ROOT_DIR}" \
     "${OPTIONAL_BINDS[@]+"${OPTIONAL_BINDS[@]}"}" \
     --pwd "${ROOT_DIR}" \
