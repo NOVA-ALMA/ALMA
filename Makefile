@@ -99,11 +99,13 @@ endif
 
 test-unit:
 	$(RUN_DEV) \
-		pytest $(UNIT_PATH) --nologfile -o "cache_dir=$(PYTEST_CACHE)" -q $(PYTEST_ARGS)
+		bash -c "cd /home/pipeline/workdir && pixi run --manifest-path=/home/pipeline/pipeline test-unit"
 
 test-regression-fast:
-	$(RUN_CASA) \
-		bash -c "cd /casa/workdir && python3 -m pytest /casa/$(REGRESSION_FAST_PATH) --nologfile -vv $(PYTEST_ARGS)"
+	$(RUN_DEV) \
+		bash -c "cd /home/pipeline/workdir && pixi run --manifest-path=/home/pipeline/pipeline test-regression"
+# $(RUN_CASA) \
+# 	bash -c "cd /casa/workdir && python3 -m pytest /casa/$(REGRESSION_FAST_PATH) --nologfile -vv $(PYTEST_ARGS)"
 
 test-regression:
 	$(RUN_CASA) \

@@ -6,8 +6,8 @@
 #   - Apptainer installed and on PATH
 #
 # Output:
-#   apptainer/pipeline-dev.sif   — development environment (Ubuntu + micromamba)
-#   apptainer/runtime.sif        — CASA runtime environment (AlmaLinux + CASA)
+#   apptainer/pipeline-dev.sif   — development environment (Ubuntu 24.04 + Pixi)
+#   apptainer/runtime.sif        — CASA runtime environment (AlmaLinux 8 + CASA)
 #
 # Typical usage (build both, then rsync to HPC):
 #   ./apptainer/build.sh --all
