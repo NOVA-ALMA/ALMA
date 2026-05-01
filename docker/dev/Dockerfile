@@ -10,6 +10,8 @@ ENV LANG=C.UTF-8 \
     PIXI_HOME=/opt/pixi \
     PIXI_ENV_PREFIX=/opt/pixi/default-env \
     PYTHONNOUSERSITE=1 \
+    QT_QPA_PLATFORM=offscreen \
+    LIBGL_ALWAYS_SOFTWARE=1 \
     DISPLAY=:0
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -22,13 +24,16 @@ RUN apt-get install -y --no-install-recommends \
     ca-certificates \
     git \
     less \
+    libfontconfig1 \
+    libglib2.0-0t64 \
     xvfb \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupmod -n "${USER_NAME}" ubuntu \
     && usermod -l "${USER_NAME}" -d "${USER_HOME}" -m ubuntu \
-    && mkdir -p "${PIXI_HOME}" "${USER_HOME}/.casa/data" \
+    && mkdir -p "${PIXI_HOME}" "${USER_HOME}/.casa/data" /usr/local/share/data \
+    && ln -s "${USER_HOME}/.casa/data" /usr/local/share/data/casacore \
     && chown -R "${USER_NAME}:${USER_NAME}" "${PIXI_HOME}" "${USER_HOME}"
 
 USER "${USER_NAME}"
@@ -47,6 +52,21 @@ COPY --chown="${USER_NAME}:${USER_NAME}" pipeline/ ./
 
 RUN rm -f .git \
     && pixi install --environment default
+
+USER root
+
+# Pre-extract the casaplotms AppImage so it runs without FUSE inside Docker.
+# casaplotms otherwise exits before writing its gRPC URI, leaving Pipeline
+# blocked while it waits on the launch FIFO.
+RUN APPIMAGE="$(find "${PIXI_HOME}/envs" -path '*/site-packages/casaplotms/__bin__/casaplotms-x86_64.AppImage' -print -quit)" \
+    && cd /tmp \
+    && "$APPIMAGE" --appimage-extract > /dev/null 2>&1 \
+    && mv /tmp/squashfs-root /opt/casaplotms \
+    && chmod -R a+rX /opt/casaplotms \
+    && printf '#!/bin/sh\nexec /opt/casaplotms/AppRun "$@"\n' > "$APPIMAGE" \
+    && chmod +x "$APPIMAGE"
+
+USER "${USER_NAME}"
 
 RUN python_bin="$(find "${PIXI_HOME}/envs" -path '*/envs/default/bin/python' -print -quit)" \
     && ln -s "$(dirname "$(dirname "${python_bin}")")" "${PIXI_ENV_PREFIX}" \

@@ -18,15 +18,18 @@ RUNTIME ?= $(shell command -v docker >/dev/null 2>&1 && echo docker || echo appt
 ifeq ($(RUNTIME),docker)
   RUN_DEV  = $(COMPOSE) run --rm $(DEV_SERVICE)
   RUN_CASA = $(COMPOSE) run --rm $(CASA_SERVICE)
+  PIXI_RUN_FLAGS ?=
 else
   RUN_DEV  = ./apptainer/run-dev.sh
   RUN_CASA = ./apptainer/run-casa.sh
+  PIXI_RUN_FLAGS ?= --as-is
 endif
 
 UNIT_PATH ?= pipeline/pipeline
 COMPONENT_PATH ?= pipeline/tests/component
 REGRESSION_FAST_PATH ?= pipeline/tests/regression/fast
 REGRESSION_PATH ?= pipeline/tests/regression
+REGRESSION_WORKERS ?= 1
 PYTEST_CACHE ?= /tmp/.pytest_cache
 PYTEST_ARGS ?=
 
@@ -50,7 +53,7 @@ help:
 	"  make build-casa            Build the CASA image using docker/casa/version.env  (Docker only)" \
 	"  make shell-casa            Open a shell in the CASA runtime container" \
 	"  make test-unit             Run the default fast unit-style path in dev" \
-	"  make test-regression-fast  Run fast regression tests in casa" \
+	"  make test-regression-fast  Run fast regression tests in dev" \
 	"  make test-regression       Run regression tests including --longtests in casa" \
 
 bootstrap:
@@ -99,13 +102,11 @@ endif
 
 test-unit:
 	$(RUN_DEV) \
-		bash -c "cd /home/pipeline/workdir && pixi run --manifest-path=/home/pipeline/pipeline test-unit"
+		bash -c "cd /home/pipeline/workdir && pixi run $(PIXI_RUN_FLAGS) --manifest-path=/home/pipeline/pipeline test-unit"
 
 test-regression-fast:
 	$(RUN_DEV) \
-		bash -c "cd /home/pipeline/workdir && pixi run --manifest-path=/home/pipeline/pipeline test-regression"
-# $(RUN_CASA) \
-# 	bash -c "cd /casa/workdir && python3 -m pytest /casa/$(REGRESSION_FAST_PATH) --nologfile -vv $(PYTEST_ARGS)"
+		bash -c "cd /home/pipeline/workdir && OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 pixi run $(PIXI_RUN_FLAGS) --manifest-path=/home/pipeline/pipeline python -m pytest -n $(REGRESSION_WORKERS) --dist worksteal -m 'not mpi' --junitxml=regression-results.xml --cov=pipeline --cov-append --cov-report=html --cov-report=xml /home/pipeline/$(REGRESSION_FAST_PATH) $(PYTEST_ARGS)"
 
 test-regression:
 	$(RUN_CASA) \
