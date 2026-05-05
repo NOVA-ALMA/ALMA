@@ -13,6 +13,7 @@ RUN dnf install -y epel-release && \
     perl \
     git \
     ImageMagick \
+    procps \
     && dnf clean all
 
 # Provided at build time from docker/casa/version.env.
