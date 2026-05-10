@@ -29,7 +29,6 @@ UNIT_PATH ?= pipeline/pipeline
 COMPONENT_PATH ?= pipeline/tests/component
 REGRESSION_FAST_PATH ?= pipeline/tests/regression/fast
 REGRESSION_PATH ?= pipeline/tests/regression
-REGRESSION_WORKERS ?= 1
 PYTEST_CACHE ?= /tmp/.pytest_cache
 PYTEST_ARGS ?=
 
@@ -102,11 +101,11 @@ endif
 
 test-unit:
 	$(RUN_DEV) \
-		bash -c "cd /home/pipeline/workdir && pixi run $(PIXI_RUN_FLAGS) --manifest-path=/home/pipeline/pipeline test-unit"
+		bash -c "cd /home/pipeline/workdir && pixi run $(PIXI_RUN_FLAGS) --manifest-path=/home/pipeline/pipeline test-unit $(PYTEST_ARGS)"
 
 test-regression-fast:
 	$(RUN_DEV) \
-		bash -c "cd /home/pipeline/workdir && OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 pixi run $(PIXI_RUN_FLAGS) --manifest-path=/home/pipeline/pipeline python -m pytest -n $(REGRESSION_WORKERS) --dist worksteal -m 'not mpi' --junitxml=regression-results.xml --cov=pipeline --cov-append --cov-report=html --cov-report=xml /home/pipeline/$(REGRESSION_FAST_PATH) $(PYTEST_ARGS)"
+		bash -c "cd /home/pipeline/workdir && pixi run $(PIXI_RUN_FLAGS) --manifest-path=/home/pipeline/pipeline test-regression $(PYTEST_ARGS)"
 
 test-regression:
 	$(RUN_CASA) \

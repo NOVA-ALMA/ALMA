@@ -18,6 +18,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 DEV_IMAGE="pipeline-dev"
+DEV_TAG="latest"
 CASA_IMAGE="pipeline-casa"
 DEV_SIF="${SCRIPT_DIR}/pipeline-dev.sif"
 CASA_SIF="${SCRIPT_DIR}/pipeline-casa.sif"
@@ -77,7 +78,7 @@ build_sif() {
 # --- build -------------------------------------------------------------------
 
 if $BUILD_DEV; then
-    build_sif "${DEV_IMAGE}" "${DEV_SIF}"
+    build_sif "${DEV_IMAGE}:${DEV_TAG}" "${DEV_SIF}"
 fi
 
 if $BUILD_CASA; then

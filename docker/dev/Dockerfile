@@ -4,6 +4,7 @@ FROM ubuntu:24.04
 ARG USER_NAME=pipeline
 ARG USER_HOME=/home/${USER_NAME}
 ARG PIXI_VERSION=latest
+ARG PIXI_ENVIRONMENT=default
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -22,6 +23,7 @@ RUN apt-get install -y --no-install-recommends \
     bzip2 \
     curl \
     ca-certificates \
+    file \
     git \
     less \
     libfontconfig1 \
@@ -51,7 +53,7 @@ RUN curl -fsSL https://pixi.sh/install.sh | PIXI_VERSION="${PIXI_VERSION}" bash 
 COPY --chown="${USER_NAME}:${USER_NAME}" pipeline/ ./
 
 RUN rm -f .git \
-    && pixi install --environment default
+    && pixi install --environment ${PIXI_ENVIRONMENT}
 
 USER root
 
