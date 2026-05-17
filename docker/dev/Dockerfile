@@ -1,41 +1,88 @@
+# syntax=docker/dockerfile:1
 FROM ubuntu:24.04
 
-# Install micromamba
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends bzip2 curl ca-certificates git less \
-    && curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /usr/local bin/micromamba \
+ARG USER_NAME=pipeline
+ARG USER_HOME=/home/${USER_NAME}
+ARG PIXI_VERSION=latest
+ARG PIXI_ENVIRONMENT=default
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PIXI_HOME=/opt/pixi \
+    PIXI_ENV_PREFIX=/opt/pixi/default-env \
+    PYTHONNOUSERSITE=1 \
+    QT_QPA_PLATFORM=offscreen \
+    LIBGL_ALWAYS_SOFTWARE=1 \
+    DISPLAY=:0
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN apt-get update && apt-get upgrade -y
+
+RUN apt-get install -y --no-install-recommends \
+    bzip2 \
+    curl \
+    ca-certificates \
+    file \
+    git \
+    less \
+    libfontconfig1 \
+    libglib2.0-0t64 \
+    xvfb \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ENV MAMBA_ROOT_PREFIX=/opt/conda
+RUN groupmod -n "${USER_NAME}" ubuntu \
+    && usermod -l "${USER_NAME}" -d "${USER_HOME}" -m ubuntu \
+    && mkdir -p "${PIXI_HOME}" "${USER_HOME}/.casa/data" /usr/local/share/data \
+    && ln -s "${USER_HOME}/.casa/data" /usr/local/share/data/casacore \
+    && chown -R "${USER_NAME}:${USER_NAME}" "${PIXI_HOME}" "${USER_HOME}"
 
-RUN useradd -m -s /bin/bash pipeline
+USER "${USER_NAME}"
+WORKDIR "${USER_HOME}/pipeline"
 
-# Copy only the environment specs: pipeline source is bind-mounted at runtime
-# requirements.txt must be alongside environment.yml since it's referenced via -r requirements.txt
-COPY pipeline/environment.yml /tmp/environment.yml
-COPY pipeline/requirements.txt /tmp/requirements.txt
-COPY pipeline/requirements_dev.txt /tmp/requirements_dev.txt
+ENV PATH="${PIXI_HOME}/bin:${PIXI_ENV_PREFIX}/bin:${PATH}" \
+    CONDA_PREFIX="${PIXI_ENV_PREFIX}" \
+    CONDA_DEFAULT_ENV=default
 
-# Create the conda environment and install dev tools
-RUN micromamba create -f /tmp/environment.yml -n pipeline --yes \
-    && micromamba run -n pipeline pip install --disable-pip-version-check -r /tmp/requirements_dev.txt \
-    && micromamba clean --all --yes
+RUN curl -fsSL https://pixi.sh/install.sh | PIXI_VERSION="${PIXI_VERSION}" bash \
+    && pixi config set --global detached-environments /opt/pixi/envs
 
-# Add .pth file so the bind-mounted source (/home/pipeline/pipeline) is importable
-# without needing pip install -e (which fails on read-only mounts)
-RUN echo '/home/pipeline/pipeline' \
-    > /opt/conda/envs/pipeline/lib/python3.12/site-packages/pipeline-src.pth
+# Copy the Pixi project into the image so the default environment can be
+# installed at build time. docker-compose bind-mounts the same path at runtime.
+COPY --chown="${USER_NAME}:${USER_NAME}" pipeline/ ./
 
-USER pipeline
-WORKDIR /home/pipeline
+RUN rm -f .git \
+    && pixi install --environment ${PIXI_ENVIRONMENT}
 
-# Create CASA data directory as a mount point for the measures data volume.
-RUN mkdir -p /home/pipeline/.casa/data
+USER root
 
-# Allow git to operate on the bind-mounted source (owned by host user, not container user).
-RUN git config --global --add safe.directory /home/pipeline/pipeline
+# Pre-extract the casaplotms AppImage so it runs without FUSE inside Docker.
+# casaplotms otherwise exits before writing its gRPC URI, leaving Pipeline
+# blocked while it waits on the launch FIFO.
+RUN APPIMAGE="$(find "${PIXI_HOME}/envs" -path '*/site-packages/casaplotms/__bin__/casaplotms-x86_64.AppImage' -print -quit)" \
+    && cd /tmp \
+    && "$APPIMAGE" --appimage-extract > /dev/null 2>&1 \
+    && mv /tmp/squashfs-root /opt/casaplotms \
+    && chmod -R a+rX /opt/casaplotms \
+    && printf '#!/bin/sh\nexec /opt/casaplotms/AppRun "$@"\n' > "$APPIMAGE" \
+    && chmod +x "$APPIMAGE"
 
-ENV PATH=/opt/conda/envs/pipeline/bin:$PATH \
-    CONDA_PREFIX=/opt/conda/envs/pipeline \
-    CONDA_DEFAULT_ENV=pipeline
+USER "${USER_NAME}"
+
+RUN python_bin="$(find "${PIXI_HOME}/envs" -path '*/envs/default/bin/python' -print -quit)" \
+    && ln -s "$(dirname "$(dirname "${python_bin}")")" "${PIXI_ENV_PREFIX}" \
+    && git config --global --add safe.directory "${USER_HOME}/pipeline" \
+    && { \
+        echo ''; \
+        echo '# Activate the baked Pixi default environment for interactive shells.'; \
+        echo "export PIXI_HOME=${PIXI_HOME}"; \
+        echo "export CONDA_PREFIX=${PIXI_ENV_PREFIX}"; \
+        echo 'export CONDA_DEFAULT_ENV=default'; \
+        echo "export PATH=${PIXI_HOME}/bin:${PIXI_ENV_PREFIX}/bin:\$PATH"; \
+      } >> "${USER_HOME}/.bashrc" \
+    && rm -rf "${USER_HOME}/.cache/rattler" "${USER_HOME}/.cache/pixi" "${USER_HOME}/.cache/uv"
+
+WORKDIR "${USER_HOME}"
+
+CMD ["bash"]

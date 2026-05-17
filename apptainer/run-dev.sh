@@ -2,7 +2,7 @@
 # Run the pipeline dev environment using Apptainer.
 #
 # Replicates the docker compose dev service: bind mounts, working directory,
-# environment variables, and the startup pip install for version detection.
+# and environment variables.
 #
 # Usage:
 #   ./apptainer/run-dev.sh              # open an interactive shell
@@ -80,8 +80,10 @@ EOF
 # in the view that is active at mount time).
 
 PIPELINE_HOME="${ROOT_DIR}/.pipeline-home"
+
 mkdir -p \
     "${PIPELINE_HOME}/pipeline" \
+    "${PIPELINE_HOME}/workdir" \
     "${PIPELINE_HOME}/.git/modules/pipeline" \
     "${PIPELINE_HOME}/.casa/data" \
     "${PIPELINE_HOME}/pipeline-testdata" \
@@ -110,12 +112,14 @@ else
 fi
 
 exec apptainer exec \
-    --env "PATH=/opt/conda/envs/pipeline/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
-    --env "CONDA_PREFIX=/opt/conda/envs/pipeline" \
-    --env "CONDA_DEFAULT_ENV=pipeline" \
+    --env "PATH=/opt/pixi/bin:/opt/pixi/default-env/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+    --env "PIXI_HOME=/opt/pixi" \
+    --env "CONDA_PREFIX=/opt/pixi/default-env" \
+    --env "CONDA_DEFAULT_ENV=default" \
     --env "GIT_CONFIG_GLOBAL=${GITCONFIG_FILE}" \
     --bind "${PIPELINE_HOME}:/home/pipeline" \
     --bind "${ROOT_DIR}/pipeline:/home/pipeline/pipeline" \
+    --bind "${ROOT_DIR}/workdir:/home/pipeline/workdir" \
     --bind "${ROOT_DIR}/.git/modules/pipeline:/home/pipeline/.git/modules/pipeline:ro" \
     --bind "${ROOT_DIR}/docker/data:/home/pipeline/.casa/data" \
     --bind "${CASA_CONFIG_BIND}" \

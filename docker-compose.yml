@@ -1,6 +1,6 @@
 services:
   # ---------------------------------------------------------------------------
-  # dev — Ubuntu 24.04 + micromamba/conda
+  # dev — Ubuntu 24.04 + Pixi
   # Use for: writing code, running tests, linting
   #
   # First-time setup (download CASA measures data, ~400MB):
@@ -9,7 +9,7 @@ services:
   # Usage:
   #   docker compose up -d dev              # start in background
   #   docker compose exec dev bash          # open a shell
-  #   docker compose run --rm dev pytest pipeline/ --nologfile
+  #   docker compose run --rm dev pixi run --manifest-path /home/pipeline/pipeline/pyproject.toml test-unit
   # ---------------------------------------------------------------------------
   dev:
     build:
@@ -26,7 +26,8 @@ services:
       - ./docker/data:/home/pipeline/.casa/data   # CASA measures data (shared with casa service)
       - ./docker/dev/config.py:/home/pipeline/.casa/config.py  # disables auto-update checks
       - ./pipeline-testdata:/home/pipeline/pipeline-testdata
-    working_dir: /home/pipeline
+      - ./workdir:/home/pipeline/workdir
+    working_dir: /home/pipeline/workdir
 
   # ---------------------------------------------------------------------------
   # casa — AlmaLinux 8 + CASA 6.7.3

@@ -5,6 +5,5 @@ docker/casa/*.xz
 pipeline-*
 .pipeline-home/
 raw/
-docs/*.pdf
+docs/
 workdir/
-

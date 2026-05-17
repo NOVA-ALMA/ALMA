@@ -18,9 +18,11 @@ RUNTIME ?= $(shell command -v docker >/dev/null 2>&1 && echo docker || echo appt
 ifeq ($(RUNTIME),docker)
   RUN_DEV  = $(COMPOSE) run --rm $(DEV_SERVICE)
   RUN_CASA = $(COMPOSE) run --rm $(CASA_SERVICE)
+  PIXI_RUN_FLAGS ?=
 else
   RUN_DEV  = ./apptainer/run-dev.sh
   RUN_CASA = ./apptainer/run-casa.sh
+  PIXI_RUN_FLAGS ?= --as-is
 endif
 
 UNIT_PATH ?= pipeline/pipeline
@@ -50,7 +52,7 @@ help:
 	"  make build-casa            Build the CASA image using docker/casa/version.env  (Docker only)" \
 	"  make shell-casa            Open a shell in the CASA runtime container" \
 	"  make test-unit             Run the default fast unit-style path in dev" \
-	"  make test-regression-fast  Run fast regression tests in casa" \
+	"  make test-regression-fast  Run fast regression tests in dev" \
 	"  make test-regression       Run regression tests including --longtests in casa" \
 
 bootstrap:
@@ -99,11 +101,11 @@ endif
 
 test-unit:
 	$(RUN_DEV) \
-		pytest $(UNIT_PATH) --nologfile -o "cache_dir=$(PYTEST_CACHE)" -q $(PYTEST_ARGS)
+		bash -c "cd /home/pipeline/workdir && pixi run $(PIXI_RUN_FLAGS) --manifest-path=/home/pipeline/pipeline test-unit $(PYTEST_ARGS)"
 
 test-regression-fast:
-	$(RUN_CASA) \
-		bash -c "cd /casa/workdir && python3 -m pytest /casa/$(REGRESSION_FAST_PATH) --nologfile -vv $(PYTEST_ARGS)"
+	$(RUN_DEV) \
+		bash -c "cd /home/pipeline/workdir && pixi run $(PIXI_RUN_FLAGS) --manifest-path=/home/pipeline/pipeline test-regression $(PYTEST_ARGS)"
 
 test-regression:
 	$(RUN_CASA) \
